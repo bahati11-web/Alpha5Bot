@@ -2,9 +2,9 @@
 Le bot est développé principalement en **Python** avec **Pywikibot**, ainsi qu’en **JavaScript** pour certains scripts spécifiques.
 
 ## Fonctionnalités
-| Dossier | Description |
+| 🗂️ Dossier | Description |
 |---------|-------------|
-| [📁 Vikidia](./Vikidia) | Contient les scripts, configurations et ressources dédiés au projet Vikidia |
+| [Vikidia](./Vikidia) | Contient les scripts, configurations et ressources dédiés au projet Vikidia |
 
 ## Contact 
 **Bahati11 :** spambahati11@gmail.com & bahati11@lilo.org
