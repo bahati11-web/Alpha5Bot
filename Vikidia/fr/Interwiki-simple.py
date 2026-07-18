@@ -52,7 +52,7 @@ while modified_count < MAX_MODIFIED:
             new_text = text.replace(wp_link, wp_link + "\n" + simple_link)
             page.text = new_text
 
-            page.save(summary=f"Ajout de [[simple:{simple_title}]] depuis [[wp:{wp_title}]]",
+            page.save(summary = f"Ajout de [[simple:{simple_title}]]",
                       minor=True, bot=True)
 
             modified_count += 1
