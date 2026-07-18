@@ -1,3 +1,5 @@
+import os
+#
 import pywikibot
 import re
 import time
@@ -6,6 +8,8 @@ site = pywikibot.Site("fr", "vikidia")
 site.login()
 
 wp_site = pywikibot.Site("fr", "wikipedia")
+
+print("[OK] Connecté")
 
 MAX_MODIFIED = 100
 modified_count = 0
@@ -41,7 +45,7 @@ while modified_count < MAX_MODIFIED:
                 print("[SKIP] Page d'homonymie")
                 continue
 
-            match = re.search(r"\[\[wp:(.*?)\]\]", text)
+            match = re.search(r"\[\[wp:([^\]|]+)", text, re.IGNORECASE)
             if not match:
                 print("[SKIP] Aucun lien [[wp:]]")
                 continue
@@ -58,6 +62,7 @@ while modified_count < MAX_MODIFIED:
             print("[INFO] Recherche de l'interwiki Simple...")
 
             simple_title = None
+
             for lang in wp_page.langlinks():
                 if lang.site.code == "simple":
                     simple_title = lang.title
@@ -72,7 +77,7 @@ while modified_count < MAX_MODIFIED:
             simple_link = f"[[simple:{simple_title}]]"
             wp_link = f"[[wp:{wp_title}]]"
 
-            if simple_link in text:
+            if simple_link.lower() in text.lower():
                 print("[SKIP] Lien [[simple:]] déjà présent")
                 continue
 
@@ -80,7 +85,8 @@ while modified_count < MAX_MODIFIED:
 
             new_text = text.replace(
                 wp_link,
-                wp_link + "\n" + simple_link
+                wp_link + "\n" + simple_link,
+                1
             )
 
             page.text = new_text
@@ -92,6 +98,7 @@ while modified_count < MAX_MODIFIED:
             )
 
             modified_count += 1
+
             print(f"[DONE] Ajout sur : {page.title()} ({modified_count}/{MAX_MODIFIED})")
 
             time.sleep(0.5)
