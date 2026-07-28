@@ -3,7 +3,7 @@
 | Nom du fichier | Description |
 |----------------|------------|
 | **`BandeauxPortailsBOT.sh`** | Script shell pour gérer automatiquement les bandeaux portails sur les pages d’une catégorie |
-| **`BandeauxPortailsBOT.js`** | Script javascrit pour gérer automatiquement les bandeaux portails sur les pages d’une catégorie |
+| **`BandeauxPortailsBOT.js`** | Script javascript pour gérer automatiquement les bandeaux portails sur les pages d’une catégorie |
 | **`Interwiki-simple.py`** | Script pour ajouter ou gérer les liens vers Simple English Wikipedia |
 | **`Interwiki-nl.py`** | Script pour ajouter ou gérer les liens vers Wikikids |
 | **`Interwiki-it.py`** | Script pour ajouter ou gérer les liens vers Vikidia en Italien |
