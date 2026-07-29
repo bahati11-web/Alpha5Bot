@@ -1,104 +1,106 @@
 import os
-#
+import warnings
+warnings.filterwarnings("ignore")
+
+os.environ["PYWIKIBOT_DIR"] = ""
+
 import pywikibot
 import re
 import time
 
-site=pywikibot.Site("fr","vikidia")
-wp_site=pywikibot.Site("fr","wikipedia")
+site = pywikibot.Site("fr", "vikidia")
+wp_site = pywikibot.Site("fr", "wikipedia")
 site.login()
 
-print("[OK] Connecté")
+print("- Connecté à Vikidia")
 
-MAX_MODIFIED=100
-modified_count=0
-BATCH_SIZE=50
+MAX_PAGES = 100
+MAX_EDIT = 100
+
+analysed = 0
+edited = 0
 
 def get_wikikids_title(wp_page):
     try:
-        item=pywikibot.ItemPage.fromPage(wp_page)
+        item = pywikibot.ItemPage.fromPage(wp_page)
         item.get()
+
         if "P12086" not in item.claims:
             return None
+
         return item.claims["P12086"][0].getTarget()
-    except Exception as e:
-        print("[ERROR] Wikidata :",e)
+
+    except Exception:
         return None
 
-while modified_count<MAX_MODIFIED:
-    print(f"\n===== Lot de {BATCH_SIZE} pages =====")
+for page in site.randompages(total=MAX_PAGES, namespaces=[0]):
 
-    for page in site.randompages(total=BATCH_SIZE,namespaces=[0]):
-        if modified_count>=MAX_MODIFIED:
-            break
+    if edited >= MAX_EDIT:
+        break
 
-        print(f"\n=== {page.title()} ===")
+    analysed += 1
+    title = page.title()
 
-        try:
-            if page.isRedirectPage():
-                print("[SKIP] Redirection")
-                continue
+    try:
+        if page.isRedirectPage():
+            print(f"- {title} : redirection")
+            continue
 
-            text=page.text
+        text = page.text
+        lower = text.lower()
 
-            if "{{travaux" in text.lower():
-                print("[SKIP] Travaux")
-                continue
+        if "{{travaux" in lower:
+            print(f"- {title} : travaux")
+            continue
 
-            if "{{homonymie" in text.lower():
-                print("[SKIP] Homonymie")
-                continue
+        if "{{homonymie" in lower:
+            print(f"- {title} : homonymie")
+            continue
 
-            if re.search(r"\[\[nl:",text,re.I):
-                print("[SKIP] nl déjà présent")
-                continue
+        if re.search(r"\[\[nl:", text, re.I):
+            print(f"- {title} : déjà lié")
+            continue
 
-            match=re.search(r"\[\[wp:([^\]|]+)",text,re.I)
-            if not match:
-                print("[SKIP] Pas de wp")
-                continue
+        match = re.search(r"\[\[wp:([^\]|]+)", text, re.I)
 
-            wp_title=match.group(1).strip()
-            print("[INFO] WP :",wp_title)
+        if not match:
+            print(f"- {title} : pas de wp")
+            continue
 
-            wp_page=pywikibot.Page(wp_site,wp_title)
+        wp_title = match.group(1).strip()
 
-            if not wp_page.exists():
-                print("[FAIL] WP absent")
-                continue
+        wp_page = pywikibot.Page(wp_site, wp_title)
 
-            print("[INFO] Wikidata...")
+        if not wp_page.exists():
+            print(f"- {title} : wp absent")
+            continue
 
-            wikikids=get_wikikids_title(wp_page)
+        wikikids = get_wikikids_title(wp_page)
 
-            if not wikikids:
-                print("[SKIP] Pas de WikiKids")
-                continue
+        if not wikikids:
+            print(f"- {title} : pas de WikiKids")
+            continue
 
-            print("[OK] WikiKids :",wikikids)
+        link = f"[[nl:{wikikids}]]"
 
-            link=f"[[nl:{wikikids}]]"
+        if link in text:
+            print(f"- {title} : déjà présent")
+            continue
 
-            if link in text:
-                print("[SKIP] Déjà présent")
-                continue
+        page.text = text.rstrip() + "\n" + link
 
-            page.text=text.rstrip()+"\n"+link
+        page.save(
+            summary=f"Ajout de {link}",
+            minor=True,
+            bot=True
+        )
 
-            page.save(
-                summary=f"Ajout de {link}",
-                minor=True,
-                bot=True
-            )
+        edited += 1
+        print(f"+ {title} ({edited}/{MAX_EDIT})")
 
-            modified_count+=1
-            print(f"[DONE] {page.title()} ({modified_count}/{MAX_MODIFIED})")
+        time.sleep(1)
 
-            time.sleep(2)
+    except Exception as e:
+        print(f"! {title} : {e}")
 
-        except Exception as e:
-            print("[ERROR]",page.title(),":",e)
-
-    time.sleep(3)
-
-print(f"\n[FIN] {modified_count} modifications")
+print(f"\nTerminé : {edited} pages modifiées sur {analysed} analysées.")
