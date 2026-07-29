@@ -49,7 +49,6 @@ for page in site.randompages(total=MAX_PAGES, namespaces=[0]):
             print(f"- {title} : déjà lié")
             continue
 
-        # Recherche du lien Wikipédia
         match = re.search(r"\[\[wp:([^\]|]+)", text, re.IGNORECASE)
 
         if not match:
