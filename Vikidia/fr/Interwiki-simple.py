@@ -58,14 +58,12 @@ for page in site.randompages(total=MAX_PAGES, namespaces=[0]):
 
         wp_title = match.group(1).strip()
 
-        # Vérifie l'article Wikipédia
         wp_page = pywikibot.Page(wp_site, wp_title)
 
         if not wp_page.exists():
             print(f"- {title} : wp absent")
             continue
-
-        # Recherche de l'interwiki Simple English
+            
         simple_title = None
 
         for lang in wp_page.langlinks():
@@ -77,7 +75,6 @@ for page in site.randompages(total=MAX_PAGES, namespaces=[0]):
             print(f"- {title} : pas de simple")
             continue
 
-        # Ajout du lien
         wp_link = f"[[wp:{wp_title}]]"
         simple_link = f"[[simple:{simple_title}]]"
 
