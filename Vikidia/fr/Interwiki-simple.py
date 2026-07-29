@@ -16,7 +16,7 @@ wp_site = pywikibot.Site("fr", "wikipedia")
 print("- Connecté à Vikidia")
 
 MAX_PAGES = 100 
-MAX_EDIT = 25   
+MAX_EDIT = 100   
 
 analysed = 0
 edited = 0
