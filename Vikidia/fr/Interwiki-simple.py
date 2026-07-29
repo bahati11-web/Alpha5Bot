@@ -1,5 +1,9 @@
 import os
-#
+import warnings
+warnings.filterwarnings("ignore")
+
+os.environ["PYWIKIBOT_DIR"] = ""
+
 import pywikibot
 import re
 import time
@@ -9,103 +13,92 @@ site.login()
 
 wp_site = pywikibot.Site("fr", "wikipedia")
 
-print("[OK] Connecté")
+print("- Connecté à Vikidia")
 
-MAX_MODIFIED = 100
-modified_count = 0
-BATCH_SIZE = 50
+MAX_PAGES = 100 
+MAX_EDIT = 25   
 
-while modified_count < MAX_MODIFIED:
-    print(f"\n===== Nouveau lot de {BATCH_SIZE} pages =====")
+analysed = 0
+edited = 0
 
-    random_pages = site.randompages(total=BATCH_SIZE, namespaces=[0])
+for page in site.randompages(total=MAX_PAGES, namespaces=[0]):
 
-    for page in random_pages:
-        if modified_count >= MAX_MODIFIED:
-            break
+    if edited >= MAX_EDIT:
+        break
 
-        print(f"\n=== Analyse : {page.title()} ===")
+    analysed += 1
+    title = page.title()
 
-        try:
-            if page.isRedirectPage():
-                print("[SKIP] Redirection")
-                continue
+    try:
+        if page.isRedirectPage():
+            print(f"- {title} : redirection")
+            continue
 
-            text = page.text
+        text = page.text
+        lower = text.lower()
 
-            if "{{travaux" in text.lower():
-                print("[SKIP] Modèle {{travaux}} détecté")
-                continue
+        if "{{travaux" in lower:
+            print(f"- {title} : travaux")
+            continue
 
-            if "[[simple:" in text.lower():
-                print("[SKIP] Lien [[simple:]] déjà présent")
-                continue
+        if "{{homonymie" in lower:
+            print(f"- {title} : homonymie")
+            continue
 
-            if "{{homonymie" in text.lower():
-                print("[SKIP] Page d'homonymie")
-                continue
+        if "[[simple:" in lower:
+            print(f"- {title} : déjà lié")
+            continue
 
-            match = re.search(r"\[\[wp:([^\]|]+)", text, re.IGNORECASE)
-            if not match:
-                print("[SKIP] Aucun lien [[wp:]]")
-                continue
+        # Recherche du lien Wikipédia
+        match = re.search(r"\[\[wp:([^\]|]+)", text, re.IGNORECASE)
 
-            wp_title = match.group(1).strip()
-            print(f"[INFO] Article Wikipédia : {wp_title}")
+        if not match:
+            print(f"- {title} : pas de wp")
+            continue
 
-            wp_page = pywikibot.Page(wp_site, wp_title)
+        wp_title = match.group(1).strip()
 
-            if not wp_page.exists():
-                print("[FAIL] Article Wikipédia inexistant")
-                continue
+        # Vérifie l'article Wikipédia
+        wp_page = pywikibot.Page(wp_site, wp_title)
 
-            print("[INFO] Recherche de l'interwiki Simple...")
+        if not wp_page.exists():
+            print(f"- {title} : wp absent")
+            continue
 
-            simple_title = None
+        # Recherche de l'interwiki Simple English
+        simple_title = None
 
-            for lang in wp_page.langlinks():
-                if lang.site.code == "simple":
-                    simple_title = lang.title
-                    break
+        for lang in wp_page.langlinks():
+            if lang.site.code == "simple":
+                simple_title = lang.title
+                break
 
-            if not simple_title:
-                print("[FAIL] Aucun article sur Simple English")
-                continue
+        if not simple_title:
+            print(f"- {title} : pas de simple")
+            continue
 
-            print(f"[OK] Interwiki trouvé : {simple_title}")
+        # Ajout du lien
+        wp_link = f"[[wp:{wp_title}]]"
+        simple_link = f"[[simple:{simple_title}]]"
 
-            simple_link = f"[[simple:{simple_title}]]"
-            wp_link = f"[[wp:{wp_title}]]"
+        new_text = text.replace(wp_link, wp_link + "\n" + simple_link, 1)
 
-            if simple_link.lower() in text.lower():
-                print("[SKIP] Lien [[simple:]] déjà présent")
-                continue
+        if new_text == text:
+            print(f"- {title} : aucune modif")
+            continue
 
-            print("[INFO] Préparation de la modification...")
+        page.text = new_text
+        page.save(
+            summary=f"Ajout de [[simple:{simple_title}]]",
+            minor=True,
+            bot=True
+        )
 
-            new_text = text.replace(
-                wp_link,
-                wp_link + "\n" + simple_link,
-                1
-            )
+        edited += 1
+        print(f"+ {title} ({edited}/{MAX_EDIT})")
 
-            page.text = new_text
+        time.sleep(0.5)
 
-            page.save(
-                summary=f"Ajout de [[simple:{simple_title}]]",
-                minor=True,
-                bot=True
-            )
-
-            modified_count += 1
-
-            print(f"[DONE] Ajout sur : {page.title()} ({modified_count}/{MAX_MODIFIED})")
-
-            time.sleep(0.5)
-
-        except Exception as e:
-            print(f"[ERROR] {page.title()} : {e}")
-
-    time.sleep(1)
-
-print(f"\n[INFO] Terminé : {modified_count} pages modifiées.")
+    except Exception as e:
+        print(f"! {title} : {e}")
+print(f"\nTerminé : {edited} pages modifiées sur {analysed} analysées.")
