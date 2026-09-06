@@ -1,4 +1,4 @@
-**SaviBot** est un bot multi-fonctions développé pour les projets **MediaWiki** afin d’automatiser certaines tâches de maintenance et d’amélioration des contenus.
+**Alpha5Bot** est un bot multi-fonctions développé pour les projets **MediaWiki** afin d’automatiser certaines tâches de maintenance et d’amélioration des contenus.
 Le bot est développé principalement en **Python** avec **Pywikibot**, ainsi qu’en **JavaScript** pour certains scripts spécifiques.
 
 ## Contenu
